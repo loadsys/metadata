@@ -46,3 +46,34 @@ To apply all of your metadata in a single location, create a metadata.php file i
 			)
 		)
 	);
+
+To apply metadata from within the controller, you can set a controller property called metadata
+
+	// app/app_controller.php
+	var $metadata = array(
+		'description' => 'Global description for this controller',
+		'action' => array(
+			'description' => 'Description for action only'
+		)
+	);
+
+Metadata can also be added from within a controller action with a component method
+
+	function index() {
+		// other controller stuff
+	
+		$this->Metadata->metadata('description', 'This is the description set from within the controller action');
+	
+		// other controller stuff
+	}
+
+Then to load all of the meta tags that were set use the Metadata.Metadata helper
+
+	// app/views/layouts/default.ctp
+	<title>
+		<?php echo $this->Metadata->meta(); ?>
+	</title>
+	
+Can also add additional meta tags from the view with the same helper method
+
+	<?php echo $this->Metadata->meta('description', 'Description meta tag applied from view'); ?>
