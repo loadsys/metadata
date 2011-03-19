@@ -73,11 +73,13 @@ class MetadataComponent extends Object {
 	 * @return void
 	 */
 	function startup(&$controller) {
+		$this->_callback($controller, 'metaBeforeLoad');
 		$parent = get_parent_class($controller);
 		if (strtolower($parent) === 'appcontroller') {
 			$this->_load($parent, $controller->params['action'], true);
 		}
 		$this->_load($controller, $controller->params['action']);
+		$this->_callback($controller, 'metaAfterLoad', $this->metadata);
 	}
 
 	/**
@@ -93,12 +95,7 @@ class MetadataComponent extends Object {
 	 */
 	function beforeRender(&$controller) {
 		$metadata = array();
-		if (method_exists($controller, 'metadataBeforeRender')) {
-			$tmp = $controller->metadataBeforeRender($this->metadata);
-			if (is_array($tmp)) {
-				$this->metadata = Set::merge($tmp, $this->metadata);
-			}
-		}
+		$this->_callback($controller, 'metaBeforeMerge', $this->metadata);
 		$metadata = array();
 		if (is_array($controller->helpers) && array_key_exists($this->name.'.'.$this->plugin, $controller->helpers)) {
 			$metadata = $controller->helpers[$this->name.'.'.$this->plugin];
@@ -107,6 +104,7 @@ class MetadataComponent extends Object {
 		if (is_int(array_search($this->name.'.'.$this->plugin, $controller->helpers))) {
 			unset($controller->helpers[array_search($this->name.'.'.$this->plugin, $controller->helpers)]);
 		}
+		$this->_callback($controller, 'metaAfterMerge', $this->metadata);
 		$controller->helpers[$this->name.'.'.$this->plugin] = Set::merge($this->metadata, $metadata);
 	}
 
@@ -164,7 +162,11 @@ class MetadataComponent extends Object {
 	 */
 	function _load(&$class = null, $action = null, $check = false) {
 		$methods = get_class_methods($class);
-		$vars = get_class_vars($class);
+		if (is_object($class)) {
+			$vars = get_class_vars(get_class($class));
+		} else {
+			$vars = get_class_vars($class);
+		}
 		$pass = true;
 		if ($check) {
 			if (
@@ -209,6 +211,26 @@ class MetadataComponent extends Object {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Generic method for handling the callbacks.
+	 *
+	 * @param object $class
+	 * @param string $callback
+	 * @param array $arg
+	 */
+	function _callback(&$class, $callback, $arg = array()) {
+		$args = func_get_args();
+		if (count($args) === 3) {
+			if (method_exists($class, $callback)) {
+				$tmp = $class->{$callback}($arg);
+				if (is_array($tmp)) {
+					$this->callback = $tmp;
+				}
+			}
+		}
+		return;
 	}
 }
 ?>
