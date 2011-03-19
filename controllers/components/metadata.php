@@ -25,20 +25,13 @@ class MetadataComponent extends Object {
 	var $plugin = 'Metadata';
 
 	/**
-	 * Settings for the component keyed by controller name.
+	 * Name of the config file and var expected to exist in
+	 * the config file. Can include extension.
 	 *
-	 * @var array
+	 * @var string
 	 * @access public
 	 */
-	var $settings = array();
-
-	/**
-	 * Default settings to get merged with passed in settings.
-	 *
-	 * @var array
-	 * @access public
-	 */
-	var $defaults = array();
+	var $config = 'metadata.php';
 
 	/**
 	 * The storage for the metadata items before being added
@@ -59,14 +52,24 @@ class MetadataComponent extends Object {
 	 * @return void
 	 */
 	function initialize(&$controller, $config = array()) {
-		$settings = Set::merge($this->defaults, $config);
-		$this->settings[$controller->name] = $settings;
+		if (count($config)) {
+			foreach ($config as $key => $value) {
+				if (isset($this->{$key})) {
+					$this->$key = $value;
+				}
+			}
+		}
 	}
 
 	/**
-	 * Checks for the parent of the controller and if it is the
-	 * appcontroller, pass the parent class through the _load
-	 * method. Then run the controller through the _load method
+	 * Calls the metaBeforeLoad callback on the controller. Then
+	 * checks if a config file exists. If so loads all the meta 
+	 * out of that config file for the controller and action being
+	 * accessed. If the controller is pages, then the last pass param
+	 * is used instead of the action. Then checks for the parent of
+	 * the controller and if it is the appcontroller, pass the parent
+	 * class through the _load method. Then run the controller through
+	 * the _load method.
 	 *
 	 * @param object $controller
 	 * @access public
@@ -74,6 +77,46 @@ class MetadataComponent extends Object {
 	 */
 	function startup(&$controller) {
 		$this->_callback($controller, 'metaBeforeLoad');
+		$_file = $this->config;
+		if (strstr($_file, '.php')) {
+			$_config = substr($_file, 0, strpos($_file, '.'));
+		} else {
+			$_config = $_file;
+			$_file .= '.php';
+		}
+		if (file_exists(APP.'config'.DS.$_file)) {
+			require_once(APP.'config'.DS.$_file);
+			$_controller = $controller->params['controller'];
+			$_action = $controller->params['action'];
+			$_page = null;
+			if ($_controller == 'pages' && count($controller->params['pass'])) {
+				$_pass = $controller->params['pass'];
+				$_page = array_pop($_pass);
+			}
+			$load = array('all' => array(), 'controller' => array(), 'action' => array());
+			$load['all'] = array_key_exists('_all', ${$_config}) ? ${$_config}['_all'] : array();
+			if (array_key_exists($_controller, ${$_config})) {
+				if (array_key_exists('_all', ${$_config}[$_controller])) {
+					$load['controller'] = ${$_config}[$_controller]['_all'];
+				}
+				if (array_key_exists($_action, ${$_config}[$_controller])) {
+					$load['action'] = ${$_config}[$_controller][$_action];
+				} elseif (
+					$_controller == 'pages' &&
+					$_page != null &&
+					array_key_exists($_page, ${$_config}[$_controller])
+				) {
+					$load['action'] = ${$_config}[$_controller][$_page];
+				}
+			}
+			foreach ($load as $metadata) {
+				if (count($metadata)) {
+					foreach ($metadata as $key => $value) {
+						$this->metadata($key, $value);
+					}
+				}
+			}
+		}
 		$parent = get_parent_class($controller);
 		if (strtolower($parent) === 'appcontroller') {
 			$this->_load($parent, $controller->params['action'], true);
@@ -130,6 +173,12 @@ class MetadataComponent extends Object {
 				unset($key['key']);
 				$this->metadata['key'] = $key;
 				return true;
+			} elseif (count($key)) {
+				foreach ($key as $i => $data) {
+					if (is_int($i)) {
+						$this->metadata($data);
+					}
+				}
 			}
 		} elseif (is_string($key)) {
 			if (is_array($value) && isset($value['value']) && !empty($value['value'])) {
