@@ -47,54 +47,36 @@ class MetadataHelper extends AppHelper {
 	}
 
 	/**
-	 * Wrapper for HtmlHelper::meta. If at least $key and $value are set, this
+	 * Wrapper for HtmlHelper::meta. If at least $name and $content are set, this
 	 * will return HtmlHelper::meta. To render all the meta tags that were set
 	 * in the controller, call meta() with no params.
 	 *
-	 * @param mixed $key
-	 * @param string $value
+	 * @param mixed $name
+	 * @param string $content
 	 * @param array $options
 	 * @access public
 	 * @return mixed
 	 */
-	function meta($key = null, $value = '', $options = array()) {
-		if (is_array($key)) {
-			if (
-				isset($key['key']) &&
-				!empty($key['key']) &&
-				isset($key['value']) &&
-				!empty($key['value'])
-			) {
-				$_key = $key['key'];
-				unset($key['key']);
-				$_value['value'];
-				unset($key['value']);
-				return $this->Html->meta($_key, $_value, $key);
+	function meta($name = null, $url = null, $attributes = array()) {
+		if (!$name && !$url) {
+			$output = '';
+			foreach ($this->metadata as $_name => $_attributes) {
+				$_url = null;
+				if (is_array($_attributes) && array_key_exists('content', $_attributes)) {
+					$_url = $_attributes['content'];
+					unset($_attributes['content']);
+				} elseif (is_array($_attributes) && array_key_exists('url', $_attributes)) {
+					$_url = $_attributes['url'];
+					unset($_attributes['url']);
+				} elseif (is_string($_attributes)) {
+					$_url = $_attributes;
+					$_attributes = array();
+				}
+				$output .= $this->Html->meta($_name, $_url, $_attributes);
 			}
-		} elseif (is_string($key)) {
-			if (is_array($value) && isset($value['value']) && !empty($value['value'])) {
-				$_value = $value['value'];
-				unset($value['value']);
-				return $this->Html->meta($key, $_value, $value);
-			} elseif (is_string($value)) {
-				return $this->Html->meta($key, $value, $options);
-			} elseif ($value == null) {
-				return '';
-			} else {
-				return '';
-			}
-		} elseif (!$key && !$value) {
-			$ret = '';
-			foreach ($this->metadata as $_key => $_options) {
-				$_value = $_options['value'];
-				unset($_options['value']);
-				$ret .= $this->Html->meta($_key, $_value, $_options)."\n";
-			}
-			return $ret;
-		} else {
-			return '';
+			return $output;
 		}
-		return '';
+		return $this->Html->meta($name, $url, $attributes);
 	}
 }
 ?>

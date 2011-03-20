@@ -40,7 +40,7 @@ To apply all of your metadata in a single location, create a metadata.php file i
 			),
 			'home' => array( // If controller is pages, the last pass param is used (file name)
 				'description' => array(
-					'value' => 'Home page description',
+					'content' => 'Home page description',
 					'charset' => 'UTF-8'
 				)
 			)

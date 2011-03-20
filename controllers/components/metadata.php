@@ -55,7 +55,7 @@ class MetadataComponent extends Object {
 		if (count($config)) {
 			foreach ($config as $key => $value) {
 				if (isset($this->{$key})) {
-					$this->$key = $value;
+					$this->{$key} = $value;
 				}
 			}
 		}
@@ -111,8 +111,8 @@ class MetadataComponent extends Object {
 			}
 			foreach ($load as $metadata) {
 				if (count($metadata)) {
-					foreach ($metadata as $key => $value) {
-						$this->metadata($key, $value);
+					foreach ($metadata as $name => $content) {
+						$this->metadata($name, $content);
 					}
 				}
 			}
@@ -162,16 +162,18 @@ class MetadataComponent extends Object {
 	 * @access public
 	 * @return mixed
 	 */
-	function metadata($key = null, $value = null, $options = array()) {
-		if (is_array($key)) {
+	function metadata($name = null, $url = null, $attributes = array()) {
+		if (is_array($name)) {
 			if (
-				isset($key['key']) &&
-				!empty($key['key']) &&
-				isset($key['value']) &&
-				!empty($key['value'])
+				isset($name['name']) &&
+				!empty($name['name']) &&
+				(isset($name['content']) &&
+				!empty($name['content'])) ||
+				(isset($name['url']) &&
+				!empty($name['url']))
 			) {
-				unset($key['key']);
-				$this->metadata['key'] = $key;
+				unset($name['name']);
+				$this->metadata['name'] = $key;
 				return true;
 			} elseif (count($key)) {
 				foreach ($key as $i => $data) {
@@ -180,13 +182,19 @@ class MetadataComponent extends Object {
 					}
 				}
 			}
-		} elseif (is_string($key)) {
-			if (is_array($value) && isset($value['value']) && !empty($value['value'])) {
-				$this->metadata[$key] = $value;
-			} elseif (is_string($value)) {
-				$this->metadata[$key] = array('value' => $value);
+		} elseif (is_string($name)) {
+			if (
+				is_array($url) &&
+				(isset($url['content']) &&
+				!empty($url['content'])) ||
+				(isset($url['url']) &&
+				!empty($url['url']))
+			) {
+				$this->metadata[$name] = $url;
+			} elseif (is_string($url)) {
+				$this->metadata[$name] = array('content' => $url);
 			} elseif ($value == null) {
-				return isset($this->metadata[$key]) ? $this->metadata[$key] : false;
+				return array_key_exists($name, $this->metadata) ? $this->metadata[$name] : false;
 			} else {
 				return false;
 			}
@@ -239,11 +247,11 @@ class MetadataComponent extends Object {
 				isset($data[$action]) &&
 				is_array($data[$action])
 			) {
-				foreach ($data[$action] as $key => $value) {
-					if (!is_int($key)) {
-						$this->metadata($key, $value);
-					} elseif (is_array($value)) {
-						$this->metadata($value);
+				foreach ($data[$action] as $name => $content) {
+					if (!is_int($name)) {
+						$this->metadata($name, $content);
+					} elseif (is_array($content)) {
+						$this->metadata($content);
 					}
 				}
 			}
@@ -252,11 +260,11 @@ class MetadataComponent extends Object {
 					unset($data[$m]);
 				}
 			}
-			foreach ($data as $key => $value) {
-				if (!is_int($key)) {
-					$this->metadata($key, $value);
-				} elseif (is_array($value)) {
-					$this->metadata($value);
+			foreach ($data as $name => $content) {
+				if (!is_int($name)) {
+					$this->metadata($name, $content);
+				} elseif (is_array($content)) {
+					$this->metadata($content);
 				}
 			}
 		}
