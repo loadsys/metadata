@@ -72,11 +72,41 @@ class MetadataHelper extends AppHelper {
 					$_url = $_attributes;
 					$_attributes = array();
 				}
-				$output .= $this->Html->meta($_name, $_url, $_attributes);
+				if (
+					in_array(strtolower($_name), array('keywords', 'description')) ||
+					preg_match('/.*\/.*/', $_url)
+				) {
+					$output .= $this->Html->meta($_name, $_url, $_attributes);
+				} else {
+					if (strtolower($_name) !== 'title') {
+						$attr = array_merge($_attributes, array('name' => $_name, 'content' => $_url));
+						$output .= $this->Html->meta($attr);
+					}
+				}
+				
 			}
 			return $output;
 		}
 		return $this->Html->meta($name, $url, $attributes);
+	}
+
+	/**
+	 * Takes the view property $title_for_layout and optionally a key and merge
+	 * option. If no data exists in the metadata array for the supplied key (defaults
+	 * to 'title') then the $title_for_layout is returned. If a values does exist
+	 * and merge is set to true, then the metadata title and the $title_for_layout
+	 * are merged together. Otherwise just the metadata title is returned.
+	 *
+	 */
+	function title($default = '', $key = 'title', $merge = false) {
+		$ret = $default;
+		if (array_key_exists($key, $this->metadata)) {
+			$ret = $this->metadata[$key];
+			if ($merge) {
+				$ret .= ' '.$default;
+			}
+		}
+		return $ret;
 	}
 }
 ?>

@@ -90,8 +90,7 @@ class MetadataComponent extends Object {
 			$_action = $controller->params['action'];
 			$_page = null;
 			if ($_controller == 'pages' && count($controller->params['pass'])) {
-				$_pass = $controller->params['pass'];
-				$_page = array_pop($_pass);
+				$_page = $controller->params['pass'][0];
 			}
 			$load = array('all' => array(), 'controller' => array(), 'action' => array());
 			$load['all'] = array_key_exists('_all', ${$_config}) ? ${$_config}['_all'] : array();
