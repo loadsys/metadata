@@ -175,8 +175,8 @@ class MetadataComponent extends Object {
 				unset($name['name']);
 				$this->metadata['name'] = $key;
 				return true;
-			} elseif (count($key)) {
-				foreach ($key as $i => $data) {
+			} elseif (count($name)) {
+				foreach ($name as $i => $data) {
 					if (is_int($i)) {
 						$this->metadata($data);
 					}
@@ -243,6 +243,16 @@ class MetadataComponent extends Object {
 		}
 		if (array_key_exists('metadata', $vars) && $pass) {
 			$data = $vars['metadata'];
+			if (array_key_exists('_all', $data)) {
+				foreach ($data['_all'] as $name => $content) {
+					if (!is_int($name)) {
+						$this->metadata($name, $content);
+					} elseif (is_array($content)) {
+						$this->metadata($content);
+					}
+				}
+				unset($data['_all']);
+			}
 			if (
 				isset($data[$action]) &&
 				is_array($data[$action])
@@ -253,18 +263,6 @@ class MetadataComponent extends Object {
 					} elseif (is_array($content)) {
 						$this->metadata($content);
 					}
-				}
-			}
-			foreach ($methods as $m) {
-				if (isset($data[$m])) {
-					unset($data[$m]);
-				}
-			}
-			foreach ($data as $name => $content) {
-				if (!is_int($name)) {
-					$this->metadata($name, $content);
-				} elseif (is_array($content)) {
-					$this->metadata($content);
 				}
 			}
 		}

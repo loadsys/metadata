@@ -62,21 +62,64 @@ class MetadataHelper extends AppHelper {
 			$output = '';
 			foreach ($this->metadata as $_name => $_attributes) {
 				$_url = null;
+				$_link = true;
+				if (is_array($_attributes) && array_key_exists('link', $_attributes)) {
+					$_link = $_attributes['link'];
+					unset($_attributes['link']);
+				}
 				if (is_array($_attributes) && array_key_exists('content', $_attributes)) {
 					$_url = $_attributes['content'];
 					unset($_attributes['content']);
-				} elseif (is_array($_attributes) && array_key_exists('url', $_attributes)) {
+				}
+				if (is_array($_attributes) && array_key_exists('url', $_attributes)) {
 					$_url = $_attributes['url'];
 					unset($_attributes['url']);
-				} elseif (is_string($_attributes)) {
+				}
+				if (is_string($_attributes)) {
 					$_url = $_attributes;
 					$_attributes = array();
 				}
-				$output .= $this->Html->meta($_name, $_url, $_attributes);
+				if (
+					(in_array(strtolower($_name), array('keywords', 'description')) ||
+					preg_match('/(.)*\/(.)*/', $_url)) &&
+					$_link
+				) {
+					if (strtolower($_name !== 'title')) {
+						$output .= $this->Html->meta($_name, $_url, $_attributes);
+					}
+				} else {
+					if (strtolower($_name) !== 'title') {
+						$attr = array_merge($_attributes, array('name' => $_name, 'content' => $_url));
+						$output .= $this->Html->meta($attr);
+					}
+				}
 			}
 			return $output;
 		}
 		return $this->Html->meta($name, $url, $attributes);
 	}
+
+	/**
+	 * Takes the view property $title_for_layout and optionally a key and merge
+	 * option. If no data exists in the metadata array for the supplied key (defaults
+	 * to 'title') then the $title_for_layout is returned. If a values does exist
+	 * and merge is set to true, then the metadata title and the $title_for_layout
+	 * are merged together. Otherwise just the metadata title is returned.
+	 *
+	 * @param string $default
+	 * @param bool $merge
+	 * @param string $key
+	 */
+	function title($default = '', $merge = false, $key = 'title') {
+		$ret = $default;
+		if (array_key_exists($key, $this->metadata)) {
+			$ret = $this->metadata[$key];
+			if ($merge) {
+				$ret .= ' '.$default;
+			}
+		}
+		return $ret;
+	}
+
 }
 ?>
