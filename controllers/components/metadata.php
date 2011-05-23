@@ -85,7 +85,7 @@ class MetadataComponent extends Object {
 			$_file .= '.php';
 		}
 		if (file_exists(APP.'config'.DS.$_file)) {
-			require_once(APP.'config'.DS.$_file);
+			include(APP.'config'.DS.$_file);
 			$_controller = $controller->params['controller'];
 			$_action = $controller->params['action'];
 			$_page = null;
@@ -93,19 +93,21 @@ class MetadataComponent extends Object {
 				$_page = $controller->params['pass'][0];
 			}
 			$load = array('all' => array(), 'controller' => array(), 'action' => array());
-			$load['all'] = array_key_exists('_all', ${$_config}) ? ${$_config}['_all'] : array();
-			if (array_key_exists($_controller, ${$_config})) {
-				if (array_key_exists('_all', ${$_config}[$_controller])) {
-					$load['controller'] = ${$_config}[$_controller]['_all'];
-				}
-				if (array_key_exists($_action, ${$_config}[$_controller])) {
-					$load['action'] = ${$_config}[$_controller][$_action];
-				} elseif (
-					$_controller == 'pages' &&
-					$_page != null &&
-					array_key_exists($_page, ${$_config}[$_controller])
-				) {
-					$load['action'] = ${$_config}[$_controller][$_page];
+			if (isset(${$_config})) {
+				$load['all'] = array_key_exists('_all', ${$_config}) ? ${$_config}['_all'] : array();
+				if (array_key_exists($_controller, ${$_config})) {
+					if (array_key_exists('_all', ${$_config}[$_controller])) {
+						$load['controller'] = ${$_config}[$_controller]['_all'];
+					}
+					if (array_key_exists($_action, ${$_config}[$_controller])) {
+						$load['action'] = ${$_config}[$_controller][$_action];
+					} elseif (
+						$_controller == 'pages' &&
+						$_page != null &&
+						array_key_exists($_page, ${$_config}[$_controller])
+					) {
+						$load['action'] = ${$_config}[$_controller][$_page];
+					}
 				}
 			}
 			foreach ($load as $metadata) {
